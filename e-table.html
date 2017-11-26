@@ -1,4 +1,5 @@
 <link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../polymer/lib/mixins/gesture-event-listeners.html">
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
@@ -6,7 +7,7 @@
 <dom-module id="e-table">
     <template>
         <style>
-            <style> :host {
+            :host {
                 display: block;
             }
 
@@ -86,7 +87,6 @@
         </style>
         </style>
         <div class="table">
-
             <div class="table-head-row">
                 <template is="dom-repeat" items="[[columns]]" as="column" targetFramerate="60" initialCount="20">
                     <div class="table-cell" draggable="true" on-dragstart="_dragStart" on-drop="_dragEnd" on-dragover="_allowDrop" id="{{column.name}}">
@@ -108,7 +108,6 @@
                     </div>
                 </template>
             </div>
-
 
             <template is="dom-repeat" items="{{filteredAndSortedData}}" as="dataRow">
                 <div class="table-row">
@@ -135,12 +134,11 @@
         class ETable extends Polymer.GestureEventListeners(Polymer.Element) {
             static get is() { return 'e-table'; }
 
-
             static get properties() {
                 return {
                     data: { type: Array, observer: '_dataLoaded' },
-                    filteredAndSortedData: { type: Array },
-                    columns: { type: Array },
+                    filteredAndSortedData: Array,
+                    columns: Array,
                     filteredColumns: { type: Object, value: function () { return {} } },
                     sortedColumns: { type: Object, value: function () { return new Map() } }
                 }
@@ -231,7 +229,6 @@
                 }
                 return '';
             }
-
 
             _dragStart(event) {
                 event.dataTransfer.setData("columnName", event.target.id);
