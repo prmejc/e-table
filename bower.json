@@ -1,5 +1,10 @@
 {
   "name": "e-table",
+  "version": "0.0.1",
+  "authors": [
+    "prmejc prmejc@gmail.com"
+  ],
+  "license": "MIT",
   "description": "Table with filtering, sorting, changeable column order",
   "main": "e-table.html",
   "dependencies": {
