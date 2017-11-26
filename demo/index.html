@@ -1,53 +1,55 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
 
-    <title>e-table demo</title>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
 
-    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+  <title>e-table demo</title>
 
-    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
-    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
-    <link rel="import" href="../e-table.html">
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
 
-    <custom-style>
-      <style is="custom-style" include="demo-pages-shared-styles">
-      </style>
-    </custom-style>
-  </head>
-  <body>
-    <div class="vertical-section-container centered">
-      <h3>Basic e-table demo</h3>
-      <demo-snippet>
-        <template>
-          <e-table></e-table>
-          <script>
+  <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+  <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+  <link rel="import" href="../e-table.html">
 
-            var generateFakeData = function(rowCount){
-              var fakeData = [];
-              for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
-              {
-                fakeData.push({
-                    name: `Product name ${rowIndex}`, quantity: rowIndex, active: rowIndex%2==0?'Y':'N'
-                });
-              }
-              return fakeData;
+  <custom-style>
+    <style is="custom-style" include="demo-pages-shared-styles">
+    </style>
+  </custom-style>
+</head>
+
+<body>
+  <div class="vertical-section-container centered">
+    <h3>Basic e-table demo</h3>
+    <demo-snippet>
+      <template>
+        <e-table></e-table>
+        <script>
+
+          var generateFakeData = function (rowCount) {
+            var fakeData = [];
+            for (var rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+              fakeData.push({
+                name: `Product name ${rowIndex}`, quantity: rowIndex, active: rowIndex % 2 == 0 ? 'Y' : 'N'
+              });
             }
+            return fakeData;
+          }
 
-            var eTable = document.getElementsByTagName("e-table")[0];
-            eTable.columns = [
-                          {name: 'name', text: 'Name'},
-                          {name: 'quantity',    text: 'Quantity'},
-                          {name: 'active',  text: 'Active'}
-                        ];
-            
-            eTable.data = generateFakeData(10);
-           
-          </script>
-        </template>
-      </demo-snippet>
-    </div>
-  </body>
+          var eTable = document.getElementsByTagName("e-table")[0];
+          eTable.columns = [
+            { name: 'name', text: 'Name' },
+            { name: 'quantity', text: 'Quantity' },
+            { name: 'active', text: 'Active' }
+          ];
+
+          eTable.data = generateFakeData(10);
+
+        </script>
+      </template>
+    </demo-snippet>
+  </div>
+</body>
+
 </html>

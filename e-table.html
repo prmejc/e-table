@@ -4,248 +4,269 @@
 <link rel="import" href="../iron-icons/iron-icons.html">
 
 <dom-module id="e-table">
-  <template>
-    <style>
+    <template>
         <style>
-          :host {
-              display: block;
-          }
-          .table {
-              display: table;
-              width: 100%;
-              clear: both;
-              color: #666666;
-              text-align: left;
-              font-size: 1em;
-              border-collapse: collapse;
-          }
-          .table-head-row { display: table-row; }
-          .table-head-row.table-cell:hover{
-              background-color: orange;
-              color: blue;
-          }
-
-          .table-row { display: table-row; }
-          .table-row:nth-child(odd) {
-              background: #f5f5f5
-          }
-          .table-row:hover(odd) {
-              background-color: var(--paper-blue-600);
-              color: var(--paper-orange-600);
-          }
-          .table-row:hover{
-              background-color: var(--paper-blue-600);
-              color: white; /*var(--paper-orange-600);*/
-          }
-          .table-header { display: table-header-group; }
-          .table-body { display: table-row-group; }
-          .table-footer { display: table-footer-group; }
-          .table-cell, .table-head{
-              display: table-cell;
-              padding-right: 2em;
-          }
-
-          paper-icon-button{
-              padding:0;
-              margin:0;
-              --paper-icon-button:{
-                  margin: 0;
-                  padding: 0;
-                  width: 0.75em;
-                  height: 0.75em;
-              }
-          }
-
-          paper-input{
-              --paper-input-container: {
-                  margin:0;
-                  padding:0;
-              }
-          }
-      </style>
-    </style>
-    <div class="table">
-      
-                  <div class="table-head-row">
-                      <template is="dom-repeat" items="[[columns]]" as="column" targetFramerate="60" initialCount="20">
-                          <div class="table-cell" draggable="true" on-dragstart="_dragStart" on-drop="_dragEnd" on-dragover="_allowDrop" id="{{column.name}}">
-                              {{column.text}}
-      
-                              <template is="dom-if" if="{{_isSorteMode(sortedColumns, column, 'ASC')}}">
-                                  <paper-icon-button icon="arrow-downward" on-tap="_changeSort"></paper-icon-button>{{_getSortIndex(sortedColumns, column)}}
-                              </template>
-      
-                              <template is="dom-if" if="{{_isSorteMode(sortedColumns, column, 'DESC')}}">
-                                  <paper-icon-button icon="arrow-upward" on-tap="_changeSort"></paper-icon-button>{{_getSortIndex(sortedColumns, column)}}
-                              </template>
-      
-                              <template is="dom-if" if="{{_isSorteMode(sortedColumns, column, undefined)}}">
-                                  <paper-icon-button icon="sort" on-tap="_changeSort"></paper-icon-button>
-                              </template>
-      
-                              <paper-input no-label-float value={{column.filter}} on-input="_changeFilter"></paper-input>
-                          </div>
-                      </template>
-                  </div>
-      
-      
-                  <template is="dom-repeat" items="{{filteredAndSortedData}}" as="dataRow">
-                      <div class="table-row">
-                          <template is="dom-repeat" items="[[columns]]" as="column">
-      
-                              <div class="table-cell">
-                                  {{_getValueAtRowColumn(dataRow, column)}}
-                              </div>
-                          </template>
-                      </div>
-                  </template>
-              </div>
-  </template>
-
-  <script>
-    /**
-     * `e-table`
-     * Table with filtering, sorting, changeable column order
-     *
-     * @customElement
-     * @polymer
-     * @demo demo/index.html
-     */
-    class ETable extends Polymer.GestureEventListeners(Polymer.Element) {
-      static get is() { return 'e-table'; }
-
-
-      static get properties() {
-          return {
-              data: {type: Array, observer: '_dataLoaded'},
-              filteredAndSortedData: {type: Array},
-              columns: {type: Array},
-              filteredColumns: {type: Object, value: function(){return {}}},
-              sortedColumns: {type: Object, value: function(){return new Map()}}
-          }
-      }
-
-      _getValueAtRowColumn(dataRow, column){
-          return dataRow[column.name];
-      }
-
-      _dataLoaded(newValue, oldValue){
-          this.filteredAndSortedData = newValue;
-      }
-
-      _changeFilter(evt){
-          var columnName = evt.model.column.name;
-          var filterText = evt.model.column.filter;
-
-          this.filteredColumns[columnName] = filterText;
-
-          if(filterText == "" || filterText == undefined){
-              delete this.filteredColumns[columnName];
-          }
-          this._filterData();
-      }
-
-      _filterData(){
-          this.filteredAndSortedData = this.data.filter((dataRow) => {
-              for(var columnName in this.filteredColumns){
-                  if((""+dataRow[columnName]).toLowerCase().indexOf(this.filteredColumns[columnName].toLocaleLowerCase())<0){
-                      return false;
-                  }
-              }
-              return true;
-          });
-          this._sortData();
-      }
-
-      _changeSort(evt){
-          var columnName = evt.model.column.name;
-          if(!this.sortedColumns[columnName]){
-              this.sortedColumns[columnName] = 'ASC';
-          }else{
-              var sortOrder =this.sortedColumns[columnName];
-              if(sortOrder == 'ASC'){
-                  this.sortedColumns[columnName] = 'DESC';
-              }else{
-                  delete this.sortedColumns[columnName];
-              }
-          }
-
-          var sortedColumnsTemp = this.sortedColumns;
-          this.sortedColumns = [];
-          this.sortedColumns = sortedColumnsTemp;
-
-          this._sortData();
-      }
-
-      _sortData(){
-          var sortedOut = this.filteredAndSortedData.sort((row1, row2) => {
-              for(var columnName in this.sortedColumns){
-                  var compare =
-                      ((typeof row1[columnName] == "number") ?
-                          row1[columnName] - row2[columnName] :
-                          (""+row1[columnName]).localeCompare(""+row2[columnName]))
-                      * (this.sortedColumns[columnName] == 'ASC' ? 1 : -1);
-                  if(compare != 0)
-                      return compare;
-              }
-              return 0;
-          });
-
-          //hack to rerender data.
-          //TODO: try to find another way
-          this.filteredAndSortedData = [];
-          this.filteredAndSortedData = sortedOut;
-      }
-
-      _isSorteMode(sortedColumns, column, sortMode){
-          return sortedColumns[column.name] == sortMode;
-      }
-
-      _getSortIndex(sortedColumns, column){
-          var index = 0;
-          for(var columnName in sortedColumns){
-              index += 1;
-              if(columnName == column.name)
-                  return index;
-          }
-          return '';
-      }
-
-
-      _dragStart(event){
-          event.dataTransfer.setData("columnName", event.target.id);
-      }
-
-      _allowDrop(event){
-          event.preventDefault();
-      }
-
-      _dragEnd(event){
-          var draggedColumnName = event.dataTransfer.getData("columnName");
-          var targetColumnName = event.target.id;
-
-          if(!draggedColumnName || !targetColumnName){
-              return;
-          }
-
-          var newIndexOfDraggedColumn = this.columns.map(col => col.name).indexOf(targetColumnName);
-          var oldIndexOfDraggedColumn = this.columns.map(col => col.name).indexOf(draggedColumnName);
-
-          //construct new column order with the two columns switched
-          var newColumnOrder = [];
-          for(var index in this.columns){
-
-            if(index == newIndexOfDraggedColumn){
-              newColumnOrder.push(this.columns[oldIndexOfDraggedColumn]);
+            <style> :host {
+                display: block;
             }
-            if(this.columns[index].name != draggedColumnName) {
-              newColumnOrder.push(this.columns[index]);
-            }
-          }
-          this.columns = newColumnOrder;
-      }
-    }
 
-    window.customElements.define(ETable.is, ETable);
-  </script>
+            .table {
+                display: table;
+                width: 100%;
+                clear: both;
+                color: #666666;
+                text-align: left;
+                font-size: 1em;
+                border-collapse: collapse;
+            }
+
+            .table-head-row {
+                display: table-row;
+            }
+
+            .table-head-row.table-cell:hover {
+                background-color: orange;
+                color: blue;
+            }
+
+            .table-row {
+                display: table-row;
+            }
+
+            .table-row:nth-child(odd) {
+                background: #f5f5f5
+            }
+
+            .table-row:hover(odd) {
+                background-color: var(--paper-blue-600);
+                color: var(--paper-orange-600);
+            }
+
+            .table-row:hover {
+                background-color: var(--paper-blue-600);
+                color: white;
+                /*var(--paper-orange-600);*/
+            }
+
+            .table-header {
+                display: table-header-group;
+            }
+
+            .table-body {
+                display: table-row-group;
+            }
+
+            .table-footer {
+                display: table-footer-group;
+            }
+
+            .table-cell,
+            .table-head {
+                display: table-cell;
+                padding-right: 2em;
+            }
+
+            paper-icon-button {
+                padding: 0;
+                margin: 0;
+                --paper-icon-button: {
+                    margin: 0;
+                    padding: 0;
+                    width: 0.75em;
+                    height: 0.75em;
+                }
+            }
+
+            paper-input {
+                --paper-input-container: {
+                    margin: 0;
+                    padding: 0;
+                }
+            }
+        </style>
+        </style>
+        <div class="table">
+
+            <div class="table-head-row">
+                <template is="dom-repeat" items="[[columns]]" as="column" targetFramerate="60" initialCount="20">
+                    <div class="table-cell" draggable="true" on-dragstart="_dragStart" on-drop="_dragEnd" on-dragover="_allowDrop" id="{{column.name}}">
+                        {{column.text}}
+
+                        <template is="dom-if" if="{{_isSorteMode(sortedColumns, column, 'ASC')}}">
+                            <paper-icon-button icon="arrow-downward" on-tap="_changeSort"></paper-icon-button>{{_getSortIndex(sortedColumns, column)}}
+                        </template>
+
+                        <template is="dom-if" if="{{_isSorteMode(sortedColumns, column, 'DESC')}}">
+                            <paper-icon-button icon="arrow-upward" on-tap="_changeSort"></paper-icon-button>{{_getSortIndex(sortedColumns, column)}}
+                        </template>
+
+                        <template is="dom-if" if="{{_isSorteMode(sortedColumns, column, undefined)}}">
+                            <paper-icon-button icon="sort" on-tap="_changeSort"></paper-icon-button>
+                        </template>
+
+                        <paper-input no-label-float value={{column.filter}} on-input="_changeFilter"></paper-input>
+                    </div>
+                </template>
+            </div>
+
+
+            <template is="dom-repeat" items="{{filteredAndSortedData}}" as="dataRow">
+                <div class="table-row">
+                    <template is="dom-repeat" items="[[columns]]" as="column">
+
+                        <div class="table-cell">
+                            {{_getValueAtRowColumn(dataRow, column)}}
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </template>
+
+    <script>
+        /**
+         * `e-table`
+         * Table with filtering, sorting, changeable column order
+         *
+         * @customElement
+         * @polymer
+         * @demo demo/index.html
+         */
+        class ETable extends Polymer.GestureEventListeners(Polymer.Element) {
+            static get is() { return 'e-table'; }
+
+
+            static get properties() {
+                return {
+                    data: { type: Array, observer: '_dataLoaded' },
+                    filteredAndSortedData: { type: Array },
+                    columns: { type: Array },
+                    filteredColumns: { type: Object, value: function () { return {} } },
+                    sortedColumns: { type: Object, value: function () { return new Map() } }
+                }
+            }
+
+            _getValueAtRowColumn(dataRow, column) {
+                return dataRow[column.name];
+            }
+
+            _dataLoaded(newValue, oldValue) {
+                this.filteredAndSortedData = newValue;
+            }
+
+            _changeFilter(evt) {
+                var columnName = evt.model.column.name;
+                var filterText = evt.model.column.filter;
+
+                this.filteredColumns[columnName] = filterText;
+
+                if (filterText == "" || filterText == undefined) {
+                    delete this.filteredColumns[columnName];
+                }
+                this._filterData();
+            }
+
+            _filterData() {
+                this.filteredAndSortedData = this.data.filter((dataRow) => {
+                    for (var columnName in this.filteredColumns) {
+                        if (("" + dataRow[columnName]).toLowerCase().indexOf(this.filteredColumns[columnName].toLocaleLowerCase()) < 0) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+                this._sortData();
+            }
+
+            _changeSort(evt) {
+                var columnName = evt.model.column.name;
+                if (!this.sortedColumns[columnName]) {
+                    this.sortedColumns[columnName] = 'ASC';
+                } else {
+                    var sortOrder = this.sortedColumns[columnName];
+                    if (sortOrder == 'ASC') {
+                        this.sortedColumns[columnName] = 'DESC';
+                    } else {
+                        delete this.sortedColumns[columnName];
+                    }
+                }
+
+                var sortedColumnsTemp = this.sortedColumns;
+                this.sortedColumns = [];
+                this.sortedColumns = sortedColumnsTemp;
+
+                this._sortData();
+            }
+
+            _sortData() {
+                var sortedOut = this.filteredAndSortedData.sort((row1, row2) => {
+                    for (var columnName in this.sortedColumns) {
+                        var compare =
+                            ((typeof row1[columnName] == "number") ?
+                                row1[columnName] - row2[columnName] :
+                                ("" + row1[columnName]).localeCompare("" + row2[columnName]))
+                            * (this.sortedColumns[columnName] == 'ASC' ? 1 : -1);
+                        if (compare != 0)
+                            return compare;
+                    }
+                    return 0;
+                });
+
+                //hack to rerender data.
+                //TODO: try to find another way
+                this.filteredAndSortedData = [];
+                this.filteredAndSortedData = sortedOut;
+            }
+
+            _isSorteMode(sortedColumns, column, sortMode) {
+                return sortedColumns[column.name] == sortMode;
+            }
+
+            _getSortIndex(sortedColumns, column) {
+                var index = 0;
+                for (var columnName in sortedColumns) {
+                    index += 1;
+                    if (columnName == column.name)
+                        return index;
+                }
+                return '';
+            }
+
+
+            _dragStart(event) {
+                event.dataTransfer.setData("columnName", event.target.id);
+            }
+
+            _allowDrop(event) {
+                event.preventDefault();
+            }
+
+            _dragEnd(event) {
+                var draggedColumnName = event.dataTransfer.getData("columnName");
+                var targetColumnName = event.target.id;
+
+                if (!draggedColumnName || !targetColumnName) {
+                    return;
+                }
+
+                var newIndexOfDraggedColumn = this.columns.map(col => col.name).indexOf(targetColumnName);
+                var oldIndexOfDraggedColumn = this.columns.map(col => col.name).indexOf(draggedColumnName);
+
+                //construct new column order with the two columns switched
+                var newColumnOrder = [];
+                for (var index in this.columns) {
+
+                    if (index == newIndexOfDraggedColumn) {
+                        newColumnOrder.push(this.columns[oldIndexOfDraggedColumn]);
+                    }
+                    if (this.columns[index].name != draggedColumnName) {
+                        newColumnOrder.push(this.columns[index]);
+                    }
+                }
+                this.columns = newColumnOrder;
+            }
+        }
+
+        window.customElements.define(ETable.is, ETable);
+    </script>
 </dom-module>

@@ -1,66 +1,68 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
 
-    <title>e-table test</title>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
 
-    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
-    <script src="../../web-component-tester/browser.js"></script>
+  <title>e-table test</title>
 
-    <link rel="import" href="../e-table.html">
-  </head>
-  <body>
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+  <script src="../../web-component-tester/browser.js"></script>
 
-    <test-fixture id="BasicTestFixture">
-      <template>
-        <e-table></e-table>
-      </template>
-    </test-fixture>
+  <link rel="import" href="../e-table.html">
+</head>
 
-    <test-fixture id="ChangedPropertyTestFixture">
-      <template>
-        <e-table></e-table>
-      </template>
-    </test-fixture>
+<body>
 
-    <script>
-      suite('e-table', () => {
+  <test-fixture id="BasicTestFixture">
+    <template>
+      <e-table></e-table>
+    </template>
+  </test-fixture>
 
-        test('instantiating the element with default properties works', () => {
-          const element = fixture('BasicTestFixture');
-          assert.equal(element.columns, undefined);
-          const elementShadowRoot = element.shadowRoot;
-          const tableCells = elementShadowRoot.querySelector('.table-cell');
-          assert.equal(tableCells, null);
-        });
+  <test-fixture id="ChangedPropertyTestFixture">
+    <template>
+      <e-table></e-table>
+    </template>
+  </test-fixture>
 
-        test('setting a property on the element works', () => {
-          // Create a test fixture
+  <script>
+    suite('e-table', () => {
 
-          var columns = [
-                          {name: 'name', text: 'Name'},
-                          {name: 'quantity',    text: 'Quantity'},
-                          {name: 'active',  text: 'Active'}
-                        ];
-          var fakeData = [];
-          for (var rowIndex = 0; rowIndex < 5; rowIndex++)
-          {
-            fakeData.push({
-                name: `Product name ${rowIndex}`, quantity: rowIndex, active: rowIndex%2==0?'Y':'N'
-            });
-          }
-
-          const eTable = fixture('ChangedPropertyTestFixture');
-          eTable.setAttribute('columns', JSON.stringify(columns));
-          eTable.setAttribute('data', JSON.stringify(fakeData));
-          assert.deepEqual(eTable.columns, columns);
-          assert.deepEqual(eTable.data, fakeData);
-        });
-
+      test('instantiating the element with default properties works', () => {
+        const element = fixture('BasicTestFixture');
+        assert.equal(element.columns, undefined);
+        const elementShadowRoot = element.shadowRoot;
+        const tableCells = elementShadowRoot.querySelector('.table-cell');
+        assert.equal(tableCells, null);
       });
-    </script>
 
-  </body>
+      test('setting a property on the element works', () => {
+        // Create a test fixture
+
+        var columns = [
+          { name: 'name', text: 'Name' },
+          { name: 'quantity', text: 'Quantity' },
+          { name: 'active', text: 'Active' }
+        ];
+        var fakeData = [];
+        for (var rowIndex = 0; rowIndex < 5; rowIndex++) {
+          fakeData.push({
+            name: `Product name ${rowIndex}`, quantity: rowIndex, active: rowIndex % 2 == 0 ? 'Y' : 'N'
+          });
+        }
+
+        const eTable = fixture('ChangedPropertyTestFixture');
+        eTable.setAttribute('columns', JSON.stringify(columns));
+        eTable.setAttribute('data', JSON.stringify(fakeData));
+        assert.deepEqual(eTable.columns, columns);
+        assert.deepEqual(eTable.data, fakeData);
+      });
+
+    });
+  </script>
+
+</body>
+
 </html>
