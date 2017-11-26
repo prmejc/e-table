@@ -21,7 +21,7 @@
 
     <test-fixture id="ChangedPropertyTestFixture">
       <template>
-        <e-table prop1="new-prop1"></e-table>
+        <e-table></e-table>
       </template>
     </test-fixture>
 
@@ -30,19 +30,33 @@
 
         test('instantiating the element with default properties works', () => {
           const element = fixture('BasicTestFixture');
-          assert.equal(element.prop1, 'e-table');
+          assert.equal(element.columns, undefined);
           const elementShadowRoot = element.shadowRoot;
-          const elementHeader = elementShadowRoot.querySelector('h2');
-          assert.equal(elementHeader.innerHTML, 'Hello e-table!');
+          const tableCells = elementShadowRoot.querySelector('.table-cell');
+          assert.equal(tableCells, null);
         });
 
         test('setting a property on the element works', () => {
           // Create a test fixture
-          const element = fixture('ChangedPropertyTestFixture');
-          assert.equal(element.prop1, 'new-prop1');
-          const elementShadowRoot = element.shadowRoot;
-          const elementHeader = elementShadowRoot.querySelector('h2');
-          assert.equal(elementHeader.innerHTML, 'Hello new-prop1!');
+
+          var columns = [
+                          {name: 'name', text: 'Name'},
+                          {name: 'quantity',    text: 'Quantity'},
+                          {name: 'active',  text: 'Active'}
+                        ];
+          var fakeData = [];
+          for (var rowIndex = 0; rowIndex < 5; rowIndex++)
+          {
+            fakeData.push({
+                name: `Product name ${rowIndex}`, quantity: rowIndex, active: rowIndex%2==0?'Y':'N'
+            });
+          }
+
+          const eTable = fixture('ChangedPropertyTestFixture');
+          eTable.setAttribute('columns', JSON.stringify(columns));
+          eTable.setAttribute('data', JSON.stringify(fakeData));
+          assert.deepEqual(eTable.columns, columns);
+          assert.deepEqual(eTable.data, fakeData);
         });
 
       });
