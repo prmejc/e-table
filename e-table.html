@@ -1,5 +1,6 @@
 <link rel="import" href="../polymer/polymer-element.html">
 <link rel="import" href="../polymer/lib/mixins/gesture-event-listeners.html">
+<link rel="import" href="../polymer/lib/mixins/mutable-data.html">
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
@@ -88,7 +89,7 @@
         </style>
         <div class="table">
             <div class="table-head-row">
-                <template is="dom-repeat" items="[[columns]]" as="column" targetFramerate="60" initialCount="20">
+                <template is="dom-repeat" items="[[columns]]" as="column" targetFramerate="60" initialCount="20" mutable-data>
                     <div class="table-cell" draggable="true" on-dragstart="_dragStart" on-drop="_dragEnd" on-dragover="_allowDrop" id="{{column.name}}">
                         {{column.text}}
 
@@ -109,7 +110,7 @@
                 </template>
             </div>
 
-            <template is="dom-repeat" items="{{filteredAndSortedData}}" as="dataRow">
+            <template is="dom-repeat" items="[[filteredAndSortedData]]" as="dataRow" mutable-data>
                 <div class="table-row">
                     <template is="dom-repeat" items="[[columns]]" as="column">
 
@@ -131,7 +132,7 @@
          * @polymer
          * @demo demo/index.html
          */
-        class ETable extends Polymer.GestureEventListeners(Polymer.Element) {
+        class ETable extends Polymer.MutableData(Polymer.GestureEventListeners(Polymer.Element)) {
             static get is() { return 'e-table'; }
 
             static get properties() {
@@ -189,15 +190,12 @@
                     }
                 }
 
-                var sortedColumnsTemp = this.sortedColumns;
-                this.sortedColumns = [];
-                this.sortedColumns = sortedColumnsTemp;
-
+                this.notifyPath("sortedColumns");
                 this._sortData();
             }
 
             _sortData() {
-                var sortedOut = this.filteredAndSortedData.sort((row1, row2) => {
+                this.filteredAndSortedData.sort((row1, row2) => {
                     for (var columnName in this.sortedColumns) {
                         var compare =
                             ((typeof row1[columnName] == "number") ?
@@ -210,10 +208,7 @@
                     return 0;
                 });
 
-                //hack to rerender data.
-                //TODO: try to find another way
-                this.filteredAndSortedData = [];
-                this.filteredAndSortedData = sortedOut;
+                this.notifyPath("filteredAndSortedData");
             }
 
             _isSorteMode(sortedColumns, column, sortMode) {
