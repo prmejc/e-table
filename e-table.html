@@ -1,9 +1,9 @@
 <link rel="import" href="../polymer/polymer-element.html">
-<link rel="import" href="../polymer/lib/mixins/gesture-event-listeners.html">
 <link rel="import" href="../polymer/lib/mixins/mutable-data.html">
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="e-column.html">
 
 <dom-module id="e-table">
     <template>
@@ -89,19 +89,20 @@
         </style>
         <div class="table">
             <div class="table-head-row">
-                <template is="dom-repeat" items="[[columns]]" as="column" targetFramerate="60" initialCount="20" mutable-data>
+                <template is="dom-repeat" items="[[_columns]]" as="column" targetFramerate="60" initialCount="20" mutable-data>
+
                     <div class="table-cell" draggable="true" on-dragstart="_dragStart" on-drop="_dragEnd" on-dragover="_allowDrop" id="{{column.name}}">
                         {{column.text}}
 
-                        <template is="dom-if" if="{{_isSorteMode(sortedColumns, column, 'ASC')}}">
-                            <paper-icon-button icon="arrow-downward" on-tap="_changeSort"></paper-icon-button>{{_getSortIndex(sortedColumns, column)}}
+                        <template is="dom-if" if="{{_isSortMode(_sortedColumns, column, 'ASC')}}">
+                            <paper-icon-button icon="arrow-downward" on-tap="_changeSort"></paper-icon-button>{{_getSortIndex(_sortedColumns, column)}}
                         </template>
 
-                        <template is="dom-if" if="{{_isSorteMode(sortedColumns, column, 'DESC')}}">
-                            <paper-icon-button icon="arrow-upward" on-tap="_changeSort"></paper-icon-button>{{_getSortIndex(sortedColumns, column)}}
+                        <template is="dom-if" if="{{_isSortMode(_sortedColumns, column, 'DESC')}}">
+                            <paper-icon-button icon="arrow-upward" on-tap="_changeSort"></paper-icon-button>{{_getSortIndex(_sortedColumns, column)}}
                         </template>
 
-                        <template is="dom-if" if="{{_isSorteMode(sortedColumns, column, undefined)}}">
+                        <template is="dom-if" if="{{_isSortMode(_sortedColumns, column, undefined)}}">
                             <paper-icon-button icon="sort" on-tap="_changeSort"></paper-icon-button>
                         </template>
 
@@ -110,13 +111,21 @@
                 </template>
             </div>
 
-            <template is="dom-repeat" items="[[filteredAndSortedData]]" as="dataRow" mutable-data>
+            <template is="dom-repeat" items="[[_filteredAndSortedData]]" as="dataRow" mutable-data>
                 <div class="table-row">
-                    <template is="dom-repeat" items="[[columns]]" as="column">
-
-                        <div class="table-cell">
-                            {{_getValueAtRowColumn(dataRow, column)}}
-                        </div>
+                    <template is="dom-repeat" items="[[_columns]]" as="column">
+                        <template is="dom-if" if="{{column.template}}">
+                            <div id$="{{_uniqueCellId(dataRow, column)}}">
+                            </div>
+                        </template>
+                        <template is="dom-if" if="{{_showDefaultTemplate(column.template)}}">
+                            <div class="table-cell">                                        
+                                {{_getValueAtRowColumn(dataRow, column)}}
+                            </div>
+                        </template>
+                        <template is="dom-if" if="{{column.template}}">
+                            {{_generateTemplate(dataRow, column)}}
+                        </template>
                     </template>
                 </div>
             </template>
@@ -132,16 +141,22 @@
          * @polymer
          * @demo demo/index.html
          */
-        class ETable extends Polymer.MutableData(Polymer.GestureEventListeners(Polymer.Element)) {
+        class ETable extends Polymer.MutableData(Polymer.Element) {
             static get is() { return 'e-table'; }
+
+            ready() {
+                super.ready();
+                this._setColumnDefinitions();
+            }
 
             static get properties() {
                 return {
                     data: { type: Array, observer: '_dataLoaded' },
-                    filteredAndSortedData: Array,
-                    columns: Array,
-                    filteredColumns: { type: Object, value: function () { return {} } },
-                    sortedColumns: { type: Object, value: function () { return new Map() } }
+                    _filteredAndSortedData: { type: Array },
+                    _columns: { type: Array },
+                    _filteredColumns: { type: Object, value: function () { return {} } },
+                    _sortedColumns: { type: Object, value: function () { return new Map() } },
+                    _cellTemplates: { type: Object, value: function () { return new Map() } }
                 }
             }
 
@@ -149,26 +164,42 @@
                 return dataRow[column.name];
             }
 
+            _setColumnDefinitions(dataRow, column) {
+                var eColumns = Array.from(this.querySelectorAll('e-column'));
+                this._columns = eColumns.map((eColumn) => {
+                    return {
+                        'name': eColumn.getAttribute('name'),
+                        'text': eColumn.getAttribute('text'),
+                        'template': eColumn.querySelector('template')
+                    }
+                });
+            }
+
             _dataLoaded(newValue, oldValue) {
-                this.filteredAndSortedData = newValue;
+                this._filteredAndSortedData = newValue.map(
+                    (row, _rowIndex) => {
+                        row._rowIndex = _rowIndex;
+                        return row;
+                    }
+                );
             }
 
             _changeFilter(evt) {
                 var columnName = evt.model.column.name;
                 var filterText = evt.model.column.filter;
 
-                this.filteredColumns[columnName] = filterText;
+                this._filteredColumns[columnName] = filterText;
 
                 if (filterText == "" || filterText == undefined) {
-                    delete this.filteredColumns[columnName];
+                    delete this._filteredColumns[columnName];
                 }
                 this._filterData();
             }
 
             _filterData() {
-                this.filteredAndSortedData = this.data.filter((dataRow) => {
-                    for (var columnName in this.filteredColumns) {
-                        if (("" + dataRow[columnName]).toLowerCase().indexOf(this.filteredColumns[columnName].toLocaleLowerCase()) < 0) {
+                this._filteredAndSortedData = this.data.filter((dataRow) => {
+                    for (var columnName in this._filteredColumns) {
+                        if (("" + dataRow[columnName]).toLowerCase().indexOf(this._filteredColumns[columnName].toLocaleLowerCase()) < 0) {
                             return false;
                         }
                     }
@@ -179,39 +210,46 @@
 
             _changeSort(evt) {
                 var columnName = evt.model.column.name;
-                if (!this.sortedColumns[columnName]) {
-                    this.sortedColumns[columnName] = 'ASC';
+                if (!this._sortedColumns[columnName]) {
+                    this._sortedColumns[columnName] = 'ASC';
                 } else {
-                    var sortOrder = this.sortedColumns[columnName];
+                    var sortOrder = this._sortedColumns[columnName];
                     if (sortOrder == 'ASC') {
-                        this.sortedColumns[columnName] = 'DESC';
+                        this._sortedColumns[columnName] = 'DESC';
                     } else {
-                        delete this.sortedColumns[columnName];
+                        delete this._sortedColumns[columnName];
                     }
                 }
 
-                this.notifyPath("sortedColumns");
-                this._sortData();
+                this.notifyPath("_sortedColumns");
+                //unecesary filtering, we could jump to this._sortData straight away
+                //TODO: find another way, to return the data in the default order, when no sorting is applied
+                //REPRODUCE: 
+                //            1) data default order [1,5,3]. Click sort => [1,3,5], Click sort =>
+                //            2) click sort => [1,3,5]
+                //            3) Click sort => [5,3,1]
+                //            4) click sort => [5,3,1] --this is wrong, no sort is applied, order should instead return to [1,5,3]
+                this._filterData();
             }
 
             _sortData() {
-                this.filteredAndSortedData.sort((row1, row2) => {
-                    for (var columnName in this.sortedColumns) {
+                this._filteredAndSortedData.sort((row1, row2) => {
+                    for (var columnName in this._sortedColumns) {
                         var compare =
                             ((typeof row1[columnName] == "number") ?
                                 row1[columnName] - row2[columnName] :
                                 ("" + row1[columnName]).localeCompare("" + row2[columnName]))
-                            * (this.sortedColumns[columnName] == 'ASC' ? 1 : -1);
+                            * (this._sortedColumns[columnName] == 'ASC' ? 1 : -1);
                         if (compare != 0)
                             return compare;
                     }
                     return 0;
                 });
 
-                this.notifyPath("filteredAndSortedData");
+                this.notifyPath("_filteredAndSortedData");
             }
 
-            _isSorteMode(sortedColumns, column, sortMode) {
+            _isSortMode(sortedColumns, column, sortMode) {
                 return sortedColumns[column.name] == sortMode;
             }
 
@@ -241,22 +279,51 @@
                     return;
                 }
 
-                var newIndexOfDraggedColumn = this.columns.map(col => col.name).indexOf(targetColumnName);
-                var oldIndexOfDraggedColumn = this.columns.map(col => col.name).indexOf(draggedColumnName);
+                var newIndexOfDraggedColumn = this._columns.map(col => col.name).indexOf(targetColumnName);
+                var oldIndexOfDraggedColumn = this._columns.map(col => col.name).indexOf(draggedColumnName);
 
                 //construct new column order with the two columns switched
                 var newColumnOrder = [];
-                for (var index in this.columns) {
+                for (var index in this._columns) {
 
                     if (index == newIndexOfDraggedColumn) {
-                        newColumnOrder.push(this.columns[oldIndexOfDraggedColumn]);
+                        newColumnOrder.push(this._columns[oldIndexOfDraggedColumn]);
                     }
-                    if (this.columns[index].name != draggedColumnName) {
-                        newColumnOrder.push(this.columns[index]);
+                    if (this._columns[index].name != draggedColumnName) {
+                        newColumnOrder.push(this._columns[index]);
                     }
                 }
-                this.columns = newColumnOrder;
+                this._columns = newColumnOrder;
             }
+
+            _showDefaultTemplate(template) {
+                return !template;
+            }
+
+            _generateTemplate(dataRow, column) {
+                let cell = this.shadowRoot.querySelector(`#${this._uniqueCellId(dataRow, column)}`);
+                if(cell && column.template){
+                    cell.innerHTML = "";
+
+                    var TemplateClass = this._cellTemplates[column.name];
+                    if(!TemplateClass){
+                        TemplateClass = Polymer.Templatize.templatize(column.template, this, {});
+                        this._cellTemplates[column.name] = TemplateClass;
+                    }
+                    let instance = new TemplateClass();
+
+                    //hack to set the model in the template
+                    Object.assign(instance, { cellValue: this._getValueAtRowColumn(dataRow, column) }); 
+
+                    cell.appendChild(instance.root);
+                }
+            }
+
+            _uniqueCellId(dataRow, column) {
+                return `${column.name}${dataRow._rowIndex}`;
+            }
+
+            
         }
 
         window.customElements.define(ETable.is, ETable);
