@@ -23,7 +23,11 @@
 
   <test-fixture id="ChangedPropertyTestFixture">
     <template>
-      <e-table></e-table>
+      <e-table>
+          <e-column name="name" text="Name"></e-column>
+          <e-column name="quantity" text="Quantity"></e-column>
+          <e-column name="active" text="Active"></e-column>
+      </e-table>
     </template>
   </test-fixture>
 
@@ -32,7 +36,7 @@
 
       test('instantiating the element with default properties works', () => {
         const element = fixture('BasicTestFixture');
-        assert.equal(element.columns, undefined);
+        assert.deepEqual(element._columns, []);
         const elementShadowRoot = element.shadowRoot;
         const tableCells = elementShadowRoot.querySelector('.table-cell');
         assert.equal(tableCells, null);
@@ -42,21 +46,30 @@
         // Create a test fixture
 
         var columns = [
-          { name: 'name', text: 'Name' },
-          { name: 'quantity', text: 'Quantity' },
-          { name: 'active', text: 'Active' }
+          { name: 'name', text: 'Name', template: null },
+          { name: 'quantity', text: 'Quantity', template: null },
+          { name: 'active', text: 'Active', template: null }
         ];
         var fakeData = [];
         for (var rowIndex = 0; rowIndex < 5; rowIndex++) {
           fakeData.push({
-            name: `Product name ${rowIndex}`, quantity: rowIndex, active: rowIndex % 2 == 0 ? 'Y' : 'N'
+            name: `Product name ${rowIndex}`, quantity: rowIndex, active: rowIndex % 2 == 0 ? 'Y' : 'N', _rowIndex: rowIndex
           });
         }
 
         const eTable = fixture('ChangedPropertyTestFixture');
-        eTable.setAttribute('columns', JSON.stringify(columns));
         eTable.setAttribute('data', JSON.stringify(fakeData));
-        assert.deepEqual(eTable.columns, columns);
+        for(var colIndex in columns){
+          assert.equal(
+            columns[colIndex].name,
+            eTable._columns[colIndex].name
+          )
+
+          assert.equal(
+            columns[colIndex].text,
+            eTable._columns[colIndex].text
+          )
+        }
         assert.deepEqual(eTable.data, fakeData);
       });
 

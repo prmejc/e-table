@@ -1,0 +1,34 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="e-column">
+    <template>
+        <style>
+            <style> 
+            :host {
+                display: block;
+            }
+        </style>
+        </style>
+    </template>
+
+    <script>
+        /**
+         * `e-column`
+         * Column for e-table
+         *
+         * @customElement
+         * @polymer
+         * @demo demo/index.html
+         */
+        class EColumn extends Polymer.Element {
+            static get is() { return 'e-column'; }
+
+            static get properties() {
+                return {
+                }
+            }
+        }
+
+        window.customElements.define(EColumn.is, EColumn);
+    </script>
+</dom-module>
