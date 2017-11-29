@@ -24,36 +24,38 @@
     <h3>Basic e-table demo</h3>
     <demo-snippet>
       <dom-bind>
-        <template>
+        <template id="demo1">
+          <!-- TODO: fix demo, source code is now not visible :/ -->
+          <!-- https://github.com/PolymerElements/iron-demo-helpers/issues/29 -->
           <e-table data="{{data}}">
             <e-column name="name" text="Name"></e-column>
             <e-column name="quantity" text="Quantity"></e-column>
             <e-column name="active" text="Active">
               <template>
+                <!-- TODO: filter not working anymore -->
                 {{_renderActiveCell(cellValue)}}
               </template>
             </e-column>
           </e-table>
+          <script>
+            var generateFakeData = function (rowCount) {
+              var fakeData = [];
+              for (var rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+                fakeData.push({
+                  name: `Product name ${rowIndex}`, quantity: rowIndex, active: rowIndex % 2 == 0 ? 'Y' : 'N'
+                });
+              }
+              return fakeData;
+            }
+            var autobind = document.querySelector('dom-bind');
+            // set data property on dom-bind
+            autobind.data = generateFakeData(10)
+            autobind._renderActiveCell = function (cellValue) {
+              return cellValue == 'Y' ? 'Yes' : 'No';
+            }
+          </script>
         </template>
       </dom-bind>
-      <script>
-        var generateFakeData = function (rowCount) {
-          var fakeData = [];
-          for (var rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-            fakeData.push({
-              name: `Product name ${rowIndex}`, quantity: rowIndex, active: rowIndex % 2 == 0 ? 'Y' : 'N'
-            });
-          }
-          return fakeData;
-        }
-        var autobind = document.querySelector('dom-bind');
-        // set data property on dom-bind
-        autobind.data = generateFakeData(10)
-        autobind._renderActiveCell = function(cellValue){
-          return cellValue=='Y'?'Yes':'No';
-        }
-      </script>
-
     </demo-snippet>
   </div>
 </body>
